@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html>
   <head>
-    <title>Socket.IO chat</title>
+    <title>Socket.IO wasd test</title>
     <style>
-	#main{
+	.main{
 		width: 50px; 
 		height: 50px; 
 		background-color: black;
@@ -15,26 +15,146 @@
   <body>
 <script src="/socket.io/socket.io.js"></script>
 <script>
-  var socket = io();
+var socket = io();
+let player = false;
+let map = {};
 
-  socket.on('test', function(loc) {
-console.log(loc);  
-document.getElementById('main').style.left = loc[0]+'px'; 
-document.getElementById('main').style.top = loc[1]+'px'; 
-   
-  });
-  
-  function test(e){
-  console.log(e);
-	socket.emit('test', [e.offsetX, e.offsetY]);
+class obj {
+  constructor(id, left, top) {
+	this.id = id;
+    this.left = left;
+    this.top = top;
   }
   
-  document.addEventListener('click', test);
+  spawn(){
+	this.div = document.createElement('div');
+	this.div.className = 'main';
+	this.div.id = this.id;
+	document.body.appendChild(this.div);
+	
+  }
+  
+  draw(){
+	this.div.style.left = this.left.toString()+'px';
+	this.div.style.top = this.top.toString()+'px';
+	
+  }
+}
+
+class Player{
+	constructor(id){
+		this.id = id;
+		
+		this.div = document.createElement('div');
+		this.div.id = this.id;
+		this.div.className = 'main';
+		
+		this.up = 0;
+		this.down = 0;
+		this.left = 0;
+		this.right = 0;
+		
+		this.dx = 0;
+		this.dy = 0;
+	}
+	
+	spawn(par){
+		par.appendChild(this.div);
+		this.div.style.left = '10px';
+		this.div.style.top = '10px';
+	}
+	
+	handleInput(e){
+		switch(e.key){
+			case 'w': this.up = 5; break;
+			case 'a': this.left = 5; break;
+			case 's': this.down = 5; break;
+			case 'd': this.right = 5; break;
+		}
+	}
+	
+	handleInputStop(e){
+		switch(e.key){
+			case 'w': this.up = 0; break;
+			case 'a': this.left = 0; break;
+			case 's': this.down = 0; break;
+			case 'd': this.right = 0; break;
+		}
+	}
+	
+	getdir(){
+		this.dx = this.right-this.left;
+		this.dy = this.down-this.up;
+	}
+	
+	move(){
+		if(this.dx != 0 || this.dy != 0){
+			console.log(this.dx, this.dy);
+			socket.emit('input',[this.id, this.dx, this.dy]);
+		}
+	}
+	
+	update(){
+		player.getdir();
+		player.move();
+	}
+	
+	render(l,t){
+		this.div.style.left = l.toString()+'px';
+		this.div.style.top = t.toString()+'px';
+	}
+	
+	
+	
+	
+}
+
+socket.emit('newPlayer', '');
+
+socket.on('newPlayer', function(playerid){
+	if(player){return};
+	player = new Player(playerid);
+	map[playerid] = new obj(playerid, 10, 10);
+	map[playerid].spawn();
+	player.updating = setInterval(player.update, 30);
+});
+
+socket.on('updateMap', function(updatemap){
+	for(let o in updatemap){
+		try{
+			map[o].left = updatemap[o].left;
+			map[o].top = updatemap[o].top;
+		}catch{
+			map[o] = new obj(o,updatemap[o].left,updatemap[o].top);
+			map[o].spawn();
+		}
+	}
+	renderall();
+});
+
+function renderall(){
+	for(let o in map){
+		map[o].draw();
+	}
+}
+
+
+document.addEventListener('keydown', handleKeyDown);
+document.addEventListener('keyup', handleKeyUp);
+
+function handleKeyDown(e){
+	player.handleInput(e);
+}
+
+function handleKeyUp(e){
+	player.handleInputStop(e);
+}
+
+
+
+  
+  
   
 </script>
-  
-	<div id='main'></div>
-
-
   </body>
 </html>
