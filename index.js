@@ -11,12 +11,13 @@ let updater = {};
 
 class obj {
   constructor(id, left, top) {
-	this.id = id;
+    this.id = id;
     this.left = left;
     this.top = top;
   }
 }
 
+map['data'] = new obj('data', 0, 0);
 
 
 app.get('/', (req, res) => {
@@ -25,7 +26,7 @@ app.get('/', (req, res) => {
 
 io.on('connection', (socket) => {
   socket.on('newPlayer', function(){
-	  console.log(socket.id);
+	  console.log(socket.id+' connected');
 	  let playerid = 'player'+socket.id;
 	  map[playerid] = new obj(playerid, 10, 10);
 	  io.emit('newPlayer', playerid);
@@ -40,13 +41,13 @@ io.on('connection', (socket) => {
 		  
 	  }
   }); 
-  
-  setInterval(function(){io.emit('updateMap', updater); updater = {}},60);
 
-setInterval(function(){console.log(map); console.log('maplog')}, 2000);
+setInterval(function(){io.emit('updateMap', updater); updater = {}},40);
+
+setInterval(function(){console.log(map); console.log('maplog')}, 5000);
 	
-  socket.on('disconnect', function(){
-	console.log('disconnected');
+  socket.on('disconnected', function(){
+	console.log(socket.id+' disconnected');
 	delete map['player'+socket.id] 
   });
 });
