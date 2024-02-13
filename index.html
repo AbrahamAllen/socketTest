@@ -53,7 +53,8 @@ class Player{
 		this.down = 0;
 		this.left = 0;
 		this.right = 0;
-		
+
+		this.speed = 2;
 		this.dx = 0;
 		this.dy = 0;
 	}
@@ -66,10 +67,10 @@ class Player{
 	
 	handleInput(e){
 		switch(e.key){
-			case 'w': this.up = 5; break;
-			case 'a': this.left = 5; break;
-			case 's': this.down = 5; break;
-			case 'd': this.right = 5; break;
+			case 'w': this.up = 2; break;
+			case 'a': this.left = 2; break;
+			case 's': this.down = 2; break;
+			case 'd': this.right = 2; break;
 		}
 	}
 	
@@ -85,6 +86,9 @@ class Player{
 	getdir(){
 		this.dx = this.right-this.left;
 		this.dy = this.down-this.up;
+		
+		if(this.up && this.right || this.up && this.left){this.dx=this.dx/2;this.dy=this.dy/2};
+		if(this.down && this.right || this.down && this.left){this.dx=this.dx/2;this.dy=this.dy/2};
 	}
 	
 	move(){
@@ -120,6 +124,7 @@ socket.on('newPlayer', function(playerid){
 });
 
 socket.on('updateMap', function(updatemap){
+	console.log(updatemap);
 	for(let o in updatemap){
 		try{
 			map[o].left = updatemap[o].left;
