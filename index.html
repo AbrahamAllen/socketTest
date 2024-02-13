@@ -120,6 +120,7 @@ socket.on('newPlayer', function(playerid){
 });
 
 socket.on('updateMap', function(updatemap){
+	console.log(updatemap);
 	for(let o in updatemap){
 		try{
 			map[o].left = updatemap[o].left;
