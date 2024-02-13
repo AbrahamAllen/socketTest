@@ -37,7 +37,7 @@ io.on('connection', (socket) => {
 		map[data[0]].top+=data[2];
 		updater[data[0]] = map[data[0]];
 	  }catch{
-		map[data[0]] = new obj(playerid, data[1], data[2]);  
+		  
 	  }
   }); 
   
@@ -46,7 +46,7 @@ io.on('connection', (socket) => {
 setInterval(function(){console.log(map); console.log('maplog')}, 2000);
 	
   socket.on('disconnect', function(){
-	console.log(socket.id);
+	console.log('disconnected');
 	delete map['player'+socket.id] 
   });
 });
