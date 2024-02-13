@@ -42,7 +42,9 @@ io.on('connection', (socket) => {
   }); 
   
   setInterval(function(){io.emit('updateMap', updater); updater = {}},60);
-  
+
+setInterval(function(){console.log(map)}, 2000);
+	
   socket.on('disconnect', function(){
 	console.log(socket.id);
 	delete map['player'+socket.id] 
