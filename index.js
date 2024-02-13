@@ -37,7 +37,7 @@ io.on('connection', (socket) => {
 		map[data[0]].top+=data[2];
 		updater[data[0]] = map[data[0]];
 	  }catch{
-		  
+		map[data[0]] = new obj(playerid, data[1], data[2]);  
 	  }
   }); 
   
