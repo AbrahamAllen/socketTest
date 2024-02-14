@@ -14,6 +14,7 @@ class obj {
     this.id = id;
     this.left = left;
     this.top = top;
+	this.rotate = 0;
   }
 }
 
@@ -25,32 +26,37 @@ app.get('/', (req, res) => {
 });
 
 io.on('connection', (socket) => {
-  socket.on('newPlayer', function(){
-	  console.log(socket.id+' connected');
+	console.log(socket.id+' connected');  
+	
+  socket.on('newPlayer', function(name){
 	  let playerid = 'player'+socket.id;
-	  map[playerid] = new obj(playerid, 10, 10);
-	  io.emit('newPlayer', playerid);
+	  map[playerid] = new obj(name, 1500, 1500);
+	  io.emit('newPlayer', [playerid, name]);
+  });
+  
+  socket.on('get', function(o){
+	 io.emit('newPlayer', [o, map[o][0]]);
   });
   
   socket.on('input', function(data){
 	  try{
 		map[data[0]].left+=data[1];
 		map[data[0]].top+=data[2];
+		map[data[0]].rotate=data[3];
 		updater[data[0]] = map[data[0]];
 	  }catch{
 		  
 	  }
   }); 
 
-setInterval(function(){io.emit('updateMap', updater); updater = {}},40);
-
-setInterval(function(){console.log(map); console.log('maplog')}, 5000);
-	
-  socket.on('disconnected', function(){
+  socket.on('disconnect', function(){
 	console.log(socket.id+' disconnected');
 	delete map['player'+socket.id] 
   });
 });
+let i = 0;
+setInterval(function(){console.log(map); console.log(i); i++}, 5000);
+setInterval(function(){io.emit('updateMap', updater); updater = {}},40);
 
 server.listen(port, () => {
   console.log(port);
