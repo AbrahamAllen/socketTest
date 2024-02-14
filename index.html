@@ -3,60 +3,108 @@
   <head>
     <title>Socket.IO wasd test</title>
     <style>
+	body::-webkit-scrollbar {
+		display: none;
+	}
+	
 	.main{
 		width: 50px; 
 		height: 50px; 
-		background-color: black;
 		position: absolute;
-		}
-
+		color: white;
+		background-image: url(https://raw.githubusercontent.com/AbrahamAllen/socketTest/main/knight.png);
+		background-size: contain;
+		line-height: 100px;
+		text-align: center;
+	}
+		
+	#fname{
+		position: fixed;
+		left: 30%;
+		width: 40%;
+		height: 40px;
+		border-radius: 7px;
+		top: 40%;
+		padding-left: 10px;
+	}
+	
+	#btn{
+		position: fixed;
+		left: 40%;
+		width: 20%;
+		height: 40px;
+		border-radius: 20px;
+		top: 50%;
+		font-size: 20px;
+	}
+	
+	#map{
+		position: absolute;
+		width: 3000px;
+		height: 3000px;
+		background-image: url('https://raw.githubusercontent.com/AbrahamAllen/socketTest/main/dessert.png');
+		
+	}
+	
     </style>
   </head>
   <body>
+  
+  <div id='map'><div class='main' id='r' style='top: 1200px; left: 1200px;'></div></div>
+<form id= "form">
+  <input type="text" id="fname" name="fname" placeholder="name"><br>
+  <input type="submit" id="btn" value="Play">
+</form> 
+
+
 <script src="/socket.io/socket.io.js"></script>
 <script>
 var socket = io();
 let player = false;
 let map = {};
 
+document.getElementById('form').addEventListener('submit', play);
+
+
 class obj {
   constructor(id, left, top) {
 	this.id = id;
     this.left = left;
     this.top = top;
+	this.rotate = 0;
   }
   
   spawn(){
 	this.div = document.createElement('div');
 	this.div.className = 'main';
 	this.div.id = this.id;
-	document.body.appendChild(this.div);
-	
+	this.div.innerText = this.id;
+	document.getElementById('map').appendChild(this.div);
+	if(player.name == this.id){player.div = this.div};
   }
   
   draw(){
 	this.div.style.left = this.left.toString()+'px';
 	this.div.style.top = this.top.toString()+'px';
+	this.div.style.transform = 'rotate('+this.rotate.toString()+'deg)';
 	
   }
 }
 
 class Player{
-	constructor(id){
+	constructor(id, name){
 		this.id = id;
-		
-		this.div = document.createElement('div');
-		this.div.id = this.id;
-		this.div.className = 'main';
+		this.name = name;
 		
 		this.up = 0;
 		this.down = 0;
 		this.left = 0;
 		this.right = 0;
 
-		this.speed = 2;
+		this.speed = 4;
 		this.dx = 0;
 		this.dy = 0;
+		this.r = 0;
 	}
 	
 	spawn(par){
@@ -67,10 +115,10 @@ class Player{
 	
 	handleInput(e){
 		switch(e.key){
-			case 'w': this.up = 2; break;
-			case 'a': this.left = 2; break;
-			case 's': this.down = 2; break;
-			case 'd': this.right = 2; break;
+			case 'w': this.up = this.speed; break;
+			case 'a': this.left = this.speed; break;
+			case 's': this.down = this.speed; break;
+			case 'd': this.right = this.speed; break;
 		}
 	}
 	
@@ -91,21 +139,57 @@ class Player{
 		if(this.down && this.right || this.down && this.left){this.dx=this.dx/2;this.dy=this.dy/2};
 	}
 	
+	turn(){
+		let d = false;
+		if(this.up == this.down){
+			
+		}else{
+			if(this.up > this.down){
+				this.r = 180;
+				if(this.left > this.right && this.left != this.right){this.r = 135}
+				if(this.left < this.right && this.left != this.right){this.r = 225}
+			}else{
+				this.r = 0;
+				if(this.left > this.right && this.left != this.right){this.r = 45}
+				if(this.left < this.right && this.left != this.right){this.r = 315}
+				
+			}
+			d = true;
+		}
+		
+		if(this.left == this.right){
+			
+		}else if(!d){
+			if(this.left > this.right){
+				this.r = 90;
+			}else{
+				this.r = 270;
+			}
+		}
+	}
+	
 	move(){
 		if(this.dx != 0 || this.dy != 0){
 			console.log(this.dx, this.dy);
-			socket.emit('input',[this.id, this.dx, this.dy]);
+			socket.emit('input',[this.id, this.dx, this.dy, this.r]);
 		}
 	}
 	
 	update(){
 		player.getdir();
+		player.turn();
 		player.move();
 	}
 	
 	render(l,t){
 		this.div.style.left = l.toString()+'px';
 		this.div.style.top = t.toString()+'px';
+		
+	}
+	
+	center(){
+		player.div.scrollIntoView({ behavior: "instant", block: "center", inline: "center" });
+		document.body.style.zoom = "100%";
 	}
 	
 	
@@ -113,25 +197,31 @@ class Player{
 	
 }
 
-socket.emit('newPlayer', '');
+function play(e){
+event.preventDefault();
+let name = form.childNodes[1].value;
+if(name != '')socket.emit('newPlayer', name);
+}
 
-socket.on('newPlayer', function(playerid){
-	if(player){return};
-	player = new Player(playerid);
-	map[playerid] = new obj(playerid, 10, 10);
-	map[playerid].spawn();
-	player.updating = setInterval(player.update, 30);
+
+socket.on('newPlayer', function(playerdata){
+	if(!player && playerdata[1] == document.getElementById('fname').value){
+		player = new Player(playerdata[0], playerdata[1]); 
+		player.updating = setInterval(player.update, 20); 
+		document.getElementById('form').remove()
+	};
+	map[playerdata[0]] = new obj(playerdata[1], 1500, 1500);
+	map[playerdata[0]].spawn();
 });
 
 socket.on('updateMap', function(updatemap){
-	console.log(updatemap);
 	for(let o in updatemap){
 		try{
 			map[o].left = updatemap[o].left;
 			map[o].top = updatemap[o].top;
+			map[o].rotate = updatemap[o].rotate;
 		}catch{
-			map[o] = new obj(o,updatemap[o].left,updatemap[o].top);
-			map[o].spawn();
+			socket.emit('get', o);
 		}
 	}
 	renderall();
@@ -141,6 +231,7 @@ function renderall(){
 	for(let o in map){
 		map[o].draw();
 	}
+	if(player){player.center()};
 }
 
 
